@@ -76,11 +76,13 @@ let process_file filename : (obstacle list * command list) =
 	(* Get first line of the file *)
 	let file_header = List.hd file_lines_as_list in
 	let file_header_vals = line_vals file_header in
-	(* This gets to anticipate count of obstacles
-		a to-do would be to check that this matches actual count of obstacles*)
+	(* This is to anticipate count of obstacles that should be in file itself
+		a to-do would be to check that this matches actual count of obstacles - that is not implemented yet
+		and results in an unused variable warning on compile *)
 	let obstacle_count = List.hd file_header_vals in
-	(* This gets to anticipate count of commands
-		a to-do would be to check that this matches actual count of commands *)
+	(* This is to anticipate count of commands that should be in file itself
+		a to-do would be to check that this matches actual count of commands- that is not implemented yet
+		and results in an unused variable warning on compile *)
 	let command_count = List.nth file_header_vals 1 in
 	let rest_of_file = List.tl file_lines_as_list in
 	let obstacles_and_commands = process_rest_of_file rest_of_file  in
@@ -100,7 +102,6 @@ let process_file filename : (obstacle list * command list) =
 		else commands in
 	let () = Printf.printf "The final number of commands is %d\n" (List.length commands) in
 	(obstacles,commands);;
-
 
 let next_pos (pos : int * int) (direction : direction) = match direction with
 	| N -> (match pos with (x,y) -> (x,y+1))
@@ -124,8 +125,8 @@ let turn (direction : direction) (turn : turn_kinds) : direction = match directi
 
 let check_curr_pos_ok (curr_pos : position) : bool =
 	match curr_pos with (x,y) ->
-		if (x > 10000) then true else
-		if (y > 10000) then true else
+		if (x > 100000 || x < -100000) then true else
+		if (y > 100000 || y < -100000) then true else
 		false;;
 
 let rec move
@@ -134,7 +135,7 @@ let rec move
 	match spaces with
 	| 0 -> curr_pos
 	| _ ->
-	(* Check if next space is blocked - is it is end the move *)
+	(* Check if next space is blocked - if it is end the move *)
 	if List.mem (next_pos curr_pos direction) obstacles then let () = Printf.printf "Obstacle!!\n" in curr_pos
 	else move (next_pos curr_pos direction) direction (spaces - 1) obstacles;;
 
@@ -157,7 +158,8 @@ let rec process_commands commands
 				if calculate_euclidean_distance start_pos curr_pos > max_dist then calculate_euclidean_distance start_pos curr_pos
 				else max_dist in
 			process_commands t start_pos
-				(move curr_pos direction (match spaces with | Some x -> x | None -> 0) obstacles) direction max_dist obstacles
+				(* The 'Some x -> (min 10 x)' enforces that the turtle may not move more than 10 places *)
+				(move curr_pos direction (match spaces with | Some x -> (min 10 x) | None -> 0) obstacles) direction max_dist obstacles
 		| (L,_) ->
 			process_commands t start_pos curr_pos (turn direction L) max_dist obstacles
 		| (R,_) ->
